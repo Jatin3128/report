@@ -1,0 +1,125 @@
+    <style>
+        .print-format {
+            padding: 5mm;
+            font-size: 8.0pt !important;
+        }
+
+        .print-format td {
+            vertical-align: middle !important;
+        }
+    </style>
+
+    <h2 class="text-center" style="margin-top:0; font-size: 15px;">{%= __(report.report_name) %}</h2>
+    <div style="display: flex; justify-content: space-between;">
+        <div style="width:30%; text-align: center;">
+            <div style="border:solid black 1px; padding:2px 2px;">
+                {% if (filters.customer) { %}
+                {%= __("Customer Name: ")%} {%= filters.customer %}
+                {% } else { %}
+                {%= __("Customer Name: ")%} {%= __("All Customers")%}
+                {% } %}
+            </div>
+            <div style="border:solid black 1px; padding:auto !important;">
+                <b> {% if (filters.primary_address) { %}
+                    {%= filters.primary_address %}
+                    {% } %}
+                </b>
+            </div>
+        </div>
+        <div style="margin-left:auto; margin-right: 30px; width: auto;">
+            <div style="border:solid black 1px; background-color: lightgray;">
+                Statement Date
+            </div>
+            <div style="border:solid black 1px;">
+                {%= frappe.datetime.str_to_user(filters.to_date) %}
+            </div>
+        </div>
+        <div style="width:30%; text-align: center;">
+            <div style="border:solid black 1px; background-color: lightgray;">
+                Customer NO
+            </div>
+            <div  style="border:solid black 1px;">
+                {%= filters.customer %}
+            </div>
+        </div>
+    </div>
+    <table class="table table-bordered">
+        <thead style="background-color: lightgray;">
+            <tr>
+                {% if(report.report_name === "Out standing statement" ) { %}
+                <th style="width: 12%">{%= __("Date") %}</th>
+                <th style="width: 20%">{%= __("Bill No") %}</th>
+                <th style="width: 12%">{%= __("Due Date") %}</th>
+                <th style="width: 12%">{%= __("Customer PO No.") %}</th>
+                <th style="width: 4%">{%= __("Age (Days)") %}</th>
+                <th style="width: 12%; text-align: right">{%= __("Grand Total") %}</th>
+                <th style="width: 12%; text-align: right">{%= __("Paid Amount") %}</th>
+                <th style="width: 12%; text-align: right">{%= __("Outstanding Amount") %}</th>
+                {% } %}
+            </tr>
+        </thead>
+        <tbody>
+
+            {% for(var i=0, l=data.length; i<l; i++) { %} 
+            {% if data[i].name %}<tr>
+                <td>{%= frappe.datetime.str_to_user(data[i]["posting_date"]) %}</td>
+                <td>{%= data[i]["name"] %}</td>
+                <td>{%= frappe.datetime.str_to_user(data[i]["due_date"]) %}</td>
+                <td>{%= data[i]["po_no"] %}</td>
+                <td>{%= data[i]["age_days"] %}</td>
+                <td style="text-align: right">
+                    {%= format_currency(data[i]["grand_total"], data[i]["currency"] ) %}</td>
+                <td style="text-align: right">
+                    {%= format_currency(data[i]["paid_amount"], data[i]["currency"] ) %}</td>
+                <td style="text-align: right">
+                    {%= format_currency(data[i]["outstanding_amount"], data[i]["currency"] ) %}</td>
+                </tr>
+                {% endif %}
+                {% } %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td  colspan="7" style="text-align: right;"> Total Balance</td>
+                {% for(var i=0, l=data.length; i<l; i++) { %}
+                {% if data[i].total_outstanding_amount %}
+                <td id="total_balance">{%= format_currency(data[i].total_outstanding_amount, data[i]["currency"] ) %}</td>
+                {% endif %}
+                {% } %}
+            </tr>
+        </tfoot>
+    </table>
+    <table>
+        <tr>
+            <th></th>
+            <th>0 TO 30days</th>
+            <th>31 to 60days</th>
+            <th>61 to 120days</th>
+            <th>120+days</th>
+        </tr>
+        <tr>
+            <td>Total</td>
+            {% for(var i=0, l=data.length; i<l; i++) { %}
+            {% if data[i].first %}
+            <td>{{ format_currency(data[i].first, data[i]["currency"] ) }}</td>
+            <td>{{ format_currency(data[i].second, data[i]["currency"] ) }}</td>
+            <td>{{ format_currency(data[i].thrid, data[i]["currency"] ) }}</td>
+            <td>{{ format_currency(data[i].fourth, data[i]["currency"] ) }}</td>
+            {% endfor %}
+            {% } %}
+        </tr>
+    </table>
+
+    <script>
+        // Calculate total outstanding amount using frappe.utils.sum function
+        var totalOutstandingAmount = frappe.utils.sum(data, function(row) {
+            return row.outstanding_amount;
+        });
+    
+        // Display total balance in the Total Balance td
+        var totalBalanceElement = document.getElementById("total_balance");
+        totalBalanceElement.innerText = format_currency(totalOutstandingAmount, frappe.boot.sysdefaults.currency);
+    </script>
+   
+<!-- <hr style="border: 1px solid black;">
+	<p class="text-right text-muted">{{ __("Printed On ") }}
+        {%= frappe.datetime.str_to_user(frappe.datetime.get_datetime_as_string()) %}</p> -->
